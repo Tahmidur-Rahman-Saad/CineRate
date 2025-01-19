@@ -16,22 +16,19 @@ from django.db.models import Sum
 @api_view(['GET'])
 def ratings(request):
     try:
-        if Rating.objects.all().exists():
-            ratings = Rating.objects.all().order_by('-id')
-
-            serializer = RatingSerializer(ratings, many=True)
-            total_rating = Rating.objects.aggregate(total_sum=Sum('rating'))
-            return Response({
-                'code': status.HTTP_200_OK,
-                'response': "Data Received Successfully",
-                'total rating':total_rating,
-                'data': serializer.data
-            })
-        else :
-            return Response({
-            'code': status.HTTP_404_NOT_FOUND,
-            'response': "Ratings does not found"
+        ratings = Rating.objects.all().order_by('-id')[:50]
+        serializer = RatingSerializer(ratings, many=True)
+        return Response({
+            'code': status.HTTP_200_OK,
+            'response': "Data Received Successfully",
+            'data': serializer.data
         })
+    
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })       
     
     except Exception as e:
         return Response({
@@ -55,7 +52,7 @@ def ratingDetails(request,pk):
         else:
             return Response({
                 'code': status.HTTP_404_NOT_FOUND,
-                'message': 'Record not found.'
+                'message': 'Data did not found.'
             })
         
     except Exception as e:
@@ -151,3 +148,33 @@ def ratingsDelete(request,pk):
             'code': status.HTTP_400_BAD_REQUEST,
             'message': str(e)
         })
+
+
+
+@api_view(['GET'])
+def ratingsForSelectedMovie(request,key):
+    try:
+        ratings = Rating.objects.filter(movie_name = key)
+
+        serializer = RatingSerializer(ratings, many=True)
+        total_rating = Rating.objects.aggregate(total_sum=Sum('rating'))
+        return Response({
+            'code': status.HTTP_200_OK,
+            'response': "Data Received Successfully",
+            'total rating':total_rating,
+            'data': serializer.data
+        })
+
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+    
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
+
