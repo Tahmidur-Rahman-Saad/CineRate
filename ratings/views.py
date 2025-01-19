@@ -44,7 +44,7 @@ def ratings(request):
 @api_view(['GET'])
 def ratingDetails(request,pk):
     try:
-        if Rating.objects.get(id=pk).exists():
+        if Rating.objects.filter(id=pk).exists():
             rating = Rating.objects.get(pk = pk)
             serializer = RatingSerializer(rating)
             return Response({

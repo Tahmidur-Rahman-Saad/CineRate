@@ -2,15 +2,62 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
+from .serializers import MovieSerializer,MusicSerializer
+from .models import Music,Movie
+from django.core.exceptions import ObjectDoesNotExist
+
 
 # Create your views here.
 @api_view(['GET'])
 def movies(request):
-    pass
+    try:
+        movies = Movie.objects.all().order_by('-release_date')[:50]#show the latest 50 movies
+        serializer = MovieSerializer(movies, many=True) 
+        return Response({
+                'code': status.HTTP_200_OK,
+                'response': "Data Received Successfully",
+                'data': serializer.data
+            })
+    
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+    
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
+
+
 
 @api_view(['GET'])
 def movieDetails(request,pk):
-    pass
+    try:
+        if Movie.objects.filter(id = pk).exists():
+            movie = Movie.objects.get(pk = pk)
+            serializer = MovieSerializer(movie)
+            return Response({
+                'code': status.HTTP_200_OK,
+                'response': "Data Received Successfully",
+                'data': serializer.data
+            })
+        
+        else:
+            return Response({
+                'code': status.HTTP_404_NOT_FOUND,
+                'message': 'Record not found.'
+            })
+        
+    except Exception as e:
+        return Response({
+            'code': status.HTTP_400_BAD_REQUEST,
+            'message': str(e)
+        })
+
 
 
 @api_view(['POST'])
@@ -56,7 +103,7 @@ def movieSearchByLanguage(request,language):
 
 
 @api_view(['GET'])
-def musicRecent(request):
+def musicRecentRelease(request):
     pass
 
 
