@@ -55,3 +55,8 @@ def movieSearchByLanguage(request,language):
     pass
 
 
+@api_view(['GET'])
+def musicRecent(request):
+    pass
+
+

@@ -12,5 +12,6 @@ urlpatterns = [
     path('movie-top-10-rating-last-month/', views.movieTopTenRatingLastMonth, name='movie-top-10-rating-last-month'),
     path('movie-top-10-rating-last-year/', views.movieTopTenRatingLastYear, name='movie-top-10-rating-last-year'),
     path('movie-search-by-language/', views.movieSearchByLanguage, name='movie-search-by-language'),
+    path('music-recent/', views.musicRecent, name='music-recent'),
     
 ]
