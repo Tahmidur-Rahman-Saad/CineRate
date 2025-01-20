@@ -5,13 +5,23 @@ from rest_framework.decorators import api_view
 from .serializers import MovieSerializer,MusicSerializer,MovieDirectorCastSerializer
 from .models import Music,Movie
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 
 
 # Create your views here.
 @api_view(['GET'])
 def movies(request):
     try:
-        movies = Movie.objects.all().order_by('-release_date')[:50]#show the latest 50 movies
+
+        search_term = request.query_params.get('search_term',None)
+        movies = Movie.objects.all().order_by('-release_date')
+        #implement the search functions
+        if search_term is not None and search_term != "":
+            movies = movies.filter(Q(name__icontains = search_term) | Q(language__icontains = search_term) | Q(director__name__icontains = search_term
+                                    ) | Q(casts__name__icontains = search_term))
+
+
+
         serializer = MovieSerializer(movies, many=True) 
         return Response({
                 'code': status.HTTP_200_OK,
@@ -146,12 +156,6 @@ def movieDelete(request,pk):
             'message': str(e)
         })
 
-
-
-
-@api_view(['GET'])
-def movieSearch(request):
-    pass
 
 
 @api_view(['GET'])

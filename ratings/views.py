@@ -10,15 +10,21 @@ from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import permission_classes
 from django.db.models import Sum
+from django.db.models import Q
 
 # Create your views here.
 
 @api_view(['GET'])
 def ratings(request):
     try:
-        ratings = Rating.objects.all().order_by('-id')[:50]
-        serializer = RatingMovieReviewerSerializer(ratings, many=True)
+        search_term = request.query_params.get('search_term',None)
         
+        ratings = Rating.objects.all().order_by('-id')
+
+        if search_term is not None and search_term != "":
+            ratings = ratings.filter(Q(rating__range = search_term) | Q(review__icontains = search_term) | Q(movie__name__icontains = search_term))
+
+        serializer = RatingMovieReviewerSerializer(ratings, many=True)      
         return Response({
             'code': status.HTTP_200_OK,
             'response': "Data Received Successfully",
