@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .serializers import RatingSerializer
+from .serializers import RatingSerializer,RatingMovieReviewerSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -17,7 +17,8 @@ from django.db.models import Sum
 def ratings(request):
     try:
         ratings = Rating.objects.all().order_by('-id')[:50]
-        serializer = RatingSerializer(ratings, many=True)
+        serializer = RatingMovieReviewerSerializer(ratings, many=True)
+        
         return Response({
             'code': status.HTTP_200_OK,
             'response': "Data Received Successfully",
@@ -43,11 +44,11 @@ def ratingDetails(request,pk):
     try:
         if Rating.objects.filter(id=pk).exists():
             rating = Rating.objects.get(pk = pk)
-            serializer = RatingSerializer(rating)
+            serializer = RatingMovieReviewerSerializer(rating)
             return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
-                'data': serializer.data
+                'data': serializer.data           
             })
         else:
             return Response({
@@ -156,7 +157,7 @@ def ratingsForSelectedMovie(request,key):
     try:
         ratings = Rating.objects.filter(movie_name = key)
 
-        serializer = RatingSerializer(ratings, many=True)
+        serializer = RatingMovieReviewerSerializer(ratings, many=True)
         total_rating = Rating.objects.aggregate(total_sum=Sum('rating'))
         return Response({
             'code': status.HTTP_200_OK,

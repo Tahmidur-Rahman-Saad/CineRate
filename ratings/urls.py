@@ -8,4 +8,5 @@ urlpatterns = [
     path('ratings-create/',views.ratingsCreate),
     path('ratings-update/<int:pk>/',views.ratingsUpdate),
     path('ratings-delete/<int:pk>/',views.ratingsDelete),
+    path('specific-movie-ratings/<int:pk>/',views.ratingsForSelectedMovie),
 ]

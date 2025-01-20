@@ -6,5 +6,5 @@ from movies.models import Movie
 class Rating(models.Model):
     rating = models.IntegerField(default=5, help_text="Enter star 1 to 5")
     review = models.CharField(max_length=200)
-    reviewer = models.OneToOneField(Reviewer, on_delete=models.CASCADE, related_name='customers', null = True)
-    movie = models.OneToOneField(Movie, on_delete=models.CASCADE, related_name='customers', null = True)
+    reviewer = models.OneToOneField(Reviewer, on_delete=models.CASCADE, related_name='reviewers', null = True)
+    movie = models.OneToOneField(Movie, on_delete=models.CASCADE, related_name='movies', null = True)
