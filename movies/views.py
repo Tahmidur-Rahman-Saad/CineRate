@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from .serializers import MovieSerializer,MusicSerializer
+from .serializers import MovieSerializer,MusicSerializer,MovieDirectorCastSerializer
 from .models import Music,Movie
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -39,7 +39,7 @@ def movieDetails(request,pk):
     try:
         if Movie.objects.filter(id = pk).exists():
             movie = Movie.objects.get(pk = pk)
-            serializer = MovieSerializer(movie)
+            serializer = MovieDirectorCastSerializer(movie)
             return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -104,6 +104,12 @@ def movieSearchByLanguage(request,language):
 
 @api_view(['GET'])
 def musicRecentRelease(request):
+    pass
+
+
+
+@api_view(['GET'])
+def musicForSelectedMovie(request):
     pass
 
 
