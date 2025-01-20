@@ -62,16 +62,91 @@ def movieDetails(request,pk):
 
 @api_view(['POST'])
 def movieCreate(request):
-    pass
+    try:
+        payload = request.data
+        serializer = MovieSerializer(data=payload)
+
+        if serializer.is_valid():
+            instance = serializer.save()
+
+            return Response({
+                'code': status.HTTP_200_OK,
+                'message': 'Data added successfully.',
+                'data': serializer(instance).data
+            })
+        else:
+            return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'errors': serializer.errors
+            })
+    except Exception as e:
+        return Response({
+            'code': status.HTTP_400_BAD_REQUEST,
+            'message': str(e)
+            })
+    
+
 
 @api_view(['PATCH'])
 def movieUpdate(request,pk):
-    pass
+    try:
+        if Movie.objects.get(id=pk).exists():
+            rating = Movie.objects.get(pk=pk)
+            serializer = MovieSerializer(rating, data=request.data, partial=True)
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'code': status.HTTP_200_OK,
+                    'response': "Data updated successfully",
+                    "data": serializer.data
+                })
+            
+            else:
+                return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data not valid",
+                'error': serializer.errors
+                })
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+    except Exception as e:
+        # Handle unexpected exceptions
+        return Response({
+            'code': status.HTTP_500_INTERNAL_SERVER_ERROR,
+            'response': "An unexpected error occurred",
+            'error': str(e)
+        })
+               
+
 
 
 @api_view(['DELETE'])
 def movieDelete(request,pk):
-    pass
+    try:
+        if Movie.objects.filter(id=pk).exists():
+            instance = Movie.objects.get(id=pk)
+            instance.delete()
+
+            return Response({
+                'code': status.HTTP_200_OK,
+                'message': 'Deleted successfully.'
+            })
+        else:
+            return Response({
+                'code': status.HTTP_404_NOT_FOUND,
+                'message': 'Record not found.'
+            })
+    except Exception as e:
+        return Response({
+            'code': status.HTTP_400_BAD_REQUEST,
+            'message': str(e)
+        })
+
+
 
 
 @api_view(['GET'])
