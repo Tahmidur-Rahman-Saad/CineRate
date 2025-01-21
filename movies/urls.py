@@ -7,11 +7,8 @@ urlpatterns = [
     path('movie-create/', views.movieCreate, name='movie-create'),
     path('movie-update/<str:pk>/', views.movieUpdate, name='movie-update'),
     path('movie-delete/<str:pk>/', views.movieDelete, name='movie-delete'),
-    path('movie-top-10-rating-last-week/', views.movieTopTenRatingLastWeek, name='movie-top-10-rating-last-week'),
-    path('movie-top-10-rating-last-month/', views.movieTopTenRatingLastMonth, name='movie-top-10-rating-last-month'),
-    path('movie-top-10-rating-last-year/', views.movieTopTenRatingLastYear, name='movie-top-10-rating-last-year'),
-    path('movie-search-by-language/', views.movieSearchByLanguage, name='movie-search-by-language'),
-    path('music-recent/', views.musicRecentRelease, name='music-recent'),
-    path('music-selected-movie/', views.musicForSelectedMovie, name='music-selected-movie'),
-    
+    path('rating-set/<int:key>', views.ratingsSet, name='rating-set'),
+    path('top-rated-movie-checking/<int:days>/<int:counts>/', views.movieTopRatingChecking, name='top-rated-movie-checking'),
+    path('recent-release-music-checking/<int:days>/<int:counts>/', views.musicRecentReleaseChecking, name='recent-release-music'),
+    path('musics/', views.musics, name='musics'),    
 ]
