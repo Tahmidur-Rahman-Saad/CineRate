@@ -31,7 +31,7 @@ class Movie(models.Model):
     image = models.ImageField(upload_to='movie_images/', null=True, blank=True)
     casts = models.ManyToManyField(Cast, related_name='movies')
     director = models.OneToOneField(Director,on_delete=models.CASCADE, related_name='director', null = True)
-    rating = models.FloatField(max_length=5,default=)
+    rating = models.FloatField(max_length=5,default=None,null=True,blank=True )
 
 
 
