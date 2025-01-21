@@ -186,7 +186,7 @@ def ratingsSet(request,key):
                 return Response({
                         'code': status.HTTP_200_OK,
                         'response': "Data Set Successfully",
-                        'data': serializer.data
+        
                         })
           
     
@@ -206,34 +206,39 @@ def ratingsSet(request,key):
 
 
 @api_view(['GET'])
-def movieTopTenRatingLastWeek(request):
+def movieTopRatingChecking(request,days,counts):
     try:
-        seven_days_ago = now() - timedelta(days=7)
-        movie = Movie.objects.filter(created_at__gte=seven_days_ago)
-        if movie.count() >= 10:
-            pass
+        days_ago = now() - timedelta(days=days)
+        movies = Movie.objects.filter(created_at__gte=days_ago)
+        if movies.count() >= counts:
+            movies = movies.all().order_by('-rating')[:counts]
+        serializer = MovieDirectorCastSerializer(movies)
+        return Response({
+            'code': status.HTTP_200_OK,
+            'response': "Data Received Successfully",
+            'data': serializer.data
+        })       
+
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
         
-        
-    except:
-        pass
-
-
-
-@api_view(['GET'])
-def movieTopTenRatingLastMonth(request):
-    pass
-
-
-
-@api_view(['GET'])
-def movieTopTenRatingLastYear(request):
-    pass
+    
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
+     
 
 
 
 @api_view(['GET'])
 def movieSearchByLanguage(request,language):
-    pass
+    
 
 
 @api_view(['GET'])
