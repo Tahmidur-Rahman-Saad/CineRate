@@ -5,7 +5,10 @@ from rest_framework.decorators import api_view
 from .serializers import MovieSerializer,MusicSerializer,MovieDirectorCastSerializer
 from .models import Music,Movie
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import Q,Avg
+from datetime import timedelta
+from django.utils.timezone import now
+from ratings.models import Rating
 
 
 # Create your views here.
@@ -159,8 +162,60 @@ def movieDelete(request,pk):
 
 
 @api_view(['GET'])
+def ratingsSet(request,key):
+    try:
+        if Movie.objects.filter(id=key).exists():
+            
+            if Rating.objects.filter(movie__name=key).exists():
+                ratings = Rating.objects.filter(movie__name = key).aggregate(Avg('rating'))
+                movie = Movie.objects.get(pk = key) 
+                movie.rating  = ratings
+
+                if ratings < 5 :
+                    movie.save()
+                    serializer = MovieDirectorCastSerializer(movie)
+                    return Response({
+                        'code': status.HTTP_200_OK,
+                        'response': "Data Set Successfully",
+                        'data': serializer.data
+                        })
+            
+            else:
+                movie.rating =None
+                movie.save()
+                return Response({
+                        'code': status.HTTP_200_OK,
+                        'response': "Data Set Successfully",
+                        'data': serializer.data
+                        })
+          
+    
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+    
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
+
+
+
+@api_view(['GET'])
 def movieTopTenRatingLastWeek(request):
-    pass
+    try:
+        seven_days_ago = now() - timedelta(days=7)
+        movie = Movie.objects.filter(created_at__gte=seven_days_ago)
+        if movie.count() >= 10:
+            pass
+        
+        
+    except:
+        pass
 
 
 

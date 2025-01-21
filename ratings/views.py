@@ -9,8 +9,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import permission_classes
-from django.db.models import Sum
-from django.db.models import Q
+from django.db.models import Sum,Q
+
 
 # Create your views here.
 
@@ -162,13 +162,11 @@ def ratingsDelete(request,pk):
 def ratingsForSelectedMovie(request,key):
     try:
         ratings = Rating.objects.filter(movie_name = key)
-
         serializer = RatingMovieReviewerSerializer(ratings, many=True)
-        total_rating = Rating.objects.aggregate(total_sum=Sum('rating'))
         return Response({
             'code': status.HTTP_200_OK,
             'response': "Data Received Successfully",
-            'total rating':total_rating,
+            'total rating':ratings,
             'data': serializer.data
         })
 
