@@ -179,14 +179,19 @@ def ratingsSet(request,key):
                         'response': "Data Set Successfully",
                         'data': serializer.data
                         })
+                else:
+                    return Response({
+                        'code': status.HTTP_400_BAD_REQUEST,
+                        'response': "Invalid Data"
+                        })
+
             
             else:
                 movie.rating =None
                 movie.save()
                 return Response({
-                        'code': status.HTTP_200_OK,
-                        'response': "Data Set Successfully",
-        
+                        'code': status.HTTP_204_NO_CONTENT,
+                        'response': "Rating not found"
                         })
           
     
@@ -209,9 +214,9 @@ def ratingsSet(request,key):
 def movieTopRatingChecking(request,days,counts):
     try:
         days_ago = now() - timedelta(days=days)
-        movies = Movie.objects.filter(created_at__gte=days_ago)
+        movies = Movie.objects.filter(created_at__gte=days_ago).order_by('-rating')
         if movies.count() >= counts:
-            movies = movies.all().order_by('-rating')[:counts]
+            movies = movies.all()[:counts]
         serializer = MovieDirectorCastSerializer(movies)
         return Response({
             'code': status.HTTP_200_OK,
@@ -237,18 +242,68 @@ def movieTopRatingChecking(request,days,counts):
 
 
 @api_view(['GET'])
-def movieSearchByLanguage(request,language):
+def musicRecentReleaseChecking(request,days,counts):
+    try:
+        days_ago = now() - timedelta(days=days)
+        musics = Music.objects.filter(created_at__gte=days_ago).order_by('-publish_date')
+        if musics.count() >= counts:
+            musics = musics.all()[:counts]
+        serializer = MusicSerializer(movies)
+        return Response({
+            'code': status.HTTP_200_OK,
+            'response': "Data Received Successfully",
+            'data': serializer.data
+        })       
+
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+        
     
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
+     
 
 
 @api_view(['GET'])
-def musicRecentRelease(request):
-    pass
+def musics(request):
+    try:
+
+        search_term = request.query_params.get('search_term',None)
+        musics = Music.objects.all().order_by('-publish_date')
+        #implement the search functions
+        if search_term is not None and search_term != "":
+            musics = musics.filter(Q(name__icontains = search_term) | Q(singers__icontains = search_term) | Q(movie__name__icontains = search_term
+                                    ) | Q(lyrics__icontains = search_term))
 
 
 
-@api_view(['GET'])
-def musicForSelectedMovie(request):
-    pass
+        serializer = MusicSerializer(movies, many=True) 
+        return Response({
+                'code': status.HTTP_200_OK,
+                'response': "Data Received Successfully",
+                'data': serializer.data
+            })
+    
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+    
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
+
+
 
 
