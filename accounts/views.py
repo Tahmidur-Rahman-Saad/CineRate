@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from .serializers import UserSerializer,DirectorSerializer,ReviewerSerializer,CastSerializer,AuthorizerSerializer
+from .serializers import UserSerializer,DirectorSerializer,ReviewerSerializer,CastSerializer,AuthorizerSerializer,UserReadSerializer
 from .models import Director,Authorizer,Reviewer,Cast
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -255,6 +255,7 @@ def castCreate(request):
 def authorizerCreate(request):
     try:
         payload = request.data
+        payload.is_staff = True
         serializer = AuthorizerSerializer(data=payload)
 
         if serializer.is_valid():
@@ -556,7 +557,7 @@ def reviewerDelete(request,pk):
 def logIn(request):
     try:
         serializer = UserSerializer(data = request.data)
-        if UserSerializer.is_valid():
+        if serializer.is_valid():
             email = UserSerializer.validated_data.get('email')
             password = UserSerializer.validated_data.get('password')
             
@@ -569,19 +570,19 @@ def logIn(request):
             if password == instance.password: 
                 print("inside password")
                 refresh = RefreshToken.for_user(instance)
-                # tokens = {
-                #     "refresh": str(refresh),
-                #     "access": str(refresh.access_token),
-                #     } 
+                tokens = {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    } 
                        
-                # serializer1 = UserReadSerializer(instance)
+                serializer1 = UserReadSerializer(instance)
                 
-                # return Response(
-                #     {'message': 'Login successful!',
-                #       'tokens': tokens,
-                #       'customer': serializer1.data}, 
-                #     status=status.HTTP_200_OK
-                # )             
+                return Response(
+                    {'message': 'Login successful!',
+                      'tokens': tokens,
+                      'customer': serializer1.data}, 
+                    status=status.HTTP_200_OK
+                )             
             else:
                 return Response(
                     {'error': 'Invalid password.'}, 
