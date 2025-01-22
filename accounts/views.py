@@ -2,12 +2,15 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from .serializers import UserSerializer,DirectorSerializer,ReviewerSerializer,CastSerializer,AuthorizerSerializer,UserReadSerializer
+from .serializers import UserSerializer,DirectorSerializer,ReviewerSerializer,CastSerializer,AuthorizerSerializer,UserReadSerializer,SetNewPasswordSerializer
 from .models import Director,Authorizer,Reviewer,Cast
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from django.core.cache import cache 
 
 
 # Create your views here.
@@ -596,6 +599,77 @@ def logIn(request):
 
 
 @api_view(['POST'])
+def resetPasswordSendLink(request):
+    try:
+        serializer = UserSerializer(data = request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.get(email=email)
+            reset_token = get_random_string(50)
+            send_mail(
+                    "Password Reset",
+                    f"Use this token to reset your password: {reset_token}",
+                    "noreply@example.com",
+                    [email],
+                )
+            return Response({
+                'code': status.HTTP_200_OK,
+                'response': "Reset token sent to your email.",
+                'data': serializer.data
+            })
+        
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+    
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
+
+
+@api_view(['POST'])
 def resetPassword(request):
-    pass
+    try:
+        serializer = SetNewPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            token = serializer.validated_data['token']
+            new_password = serializer.validated_data['new_password']
+            user_id = cache.get(token)
+            if not user_id:
+                return Response({
+                'code': status.HTTP_404_NOT_FOUND,
+                'response': 'Invalid or expired token.'
+            })
+            
+            user = User.objects.get(id=user_id)
+            user.set_password(new_password)
+            user.save()
+
+            # Invalidate the token after use
+            cache.delete(token)
+            return Response({
+                'code': status.HTTP_200_OK,
+                'response': "Password reset successfully.",
+                'data': serializer.data
+            })
+    
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+    
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
+
+
 

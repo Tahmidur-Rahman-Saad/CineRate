@@ -59,3 +59,7 @@ class UserReadSerializer(serializers.ModelSerializer):
         fields = '__all__'
     
 
+
+class SetNewPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
