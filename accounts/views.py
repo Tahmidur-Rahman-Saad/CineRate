@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from .serializers import UserSerializer,DirectorSerializer,ReviewerSerializer,CastSerializer,AuthorizerSerializer,UserReadSerializer,SetNewPasswordSerializer
+from .serializers import UserSerializer,DirectorSerializer,DirectorReadSerializer,ReviewerSerializer,ReviewerReadSerializer,CastSerializer,CastReadSerializer,AuthorizerSerializer,AuthorizerReadSerializer,UserReadSerializer,SetNewPasswordSerializer
 from .models import Director,Authorizer,Reviewer,Cast
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.core.cache import cache 
+from django.contrib.auth.hashers import make_password
 
 
 # Create your views here.
@@ -18,7 +19,7 @@ from django.core.cache import cache
 def directors(request):
     try:
         directors = Director.objects.all()
-        serializer = DirectorSerializer(directors, many=True) 
+        serializer = DirectorReadSerializer(directors, many=True) 
         return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -44,7 +45,7 @@ def directors(request):
 def casts(request):
     try:
         casts = Cast.objects.all()
-        serializer = CastSerializer(directors, many=True) 
+        serializer = CastReadSerializer(directors, many=True) 
         return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -70,7 +71,7 @@ def casts(request):
 def authorizers(request):
     try:
         authorizers = Director.objects.all()
-        serializer = AuthorizerSerializer(directors, many=True) 
+        serializer = AuthorizerReadSerializer(directors, many=True) 
         return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -96,7 +97,7 @@ def directorDetails(request,pk):
     try:
         if Director.objects.filter(id = pk).exists():
             director = Director.objects.get(pk = pk)
-            serializer = DirectorSerializer(director)
+            serializer = DirectorReadSerializer(director)
             return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -122,7 +123,7 @@ def castDetails(request,pk):
     try:
         if Cast.objects.filter(id = pk).exists():
             cast = Cast.objects.get(pk = pk)
-            serializer = CastSerializer(cast)
+            serializer = CastReadSerializer(cast)
             return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -149,7 +150,7 @@ def authorizerDetails(request,pk):
     try:
         if Authorizer.objects.filter(id = pk).exists():
             authorizer = Authorizer.objects.get(pk = pk)
-            serializer = AuthorizerSerializer(authorizer)
+            serializer = AuthorizerReadSerializer(authorizer)
             return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -176,7 +177,7 @@ def reviewerDetails(request,pk):
     try:
         if Reviewer.objects.filter(id = pk).exists():
             reviewer = Reviewer.objects.get(pk = pk)
-            serializer = ReviewerSerializer(reviewer)
+            serializer = ReviewerReadSerializer(reviewer)
             return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -201,22 +202,51 @@ def reviewerDetails(request,pk):
 @api_view(['POST'])
 def directorCreate(request):
     try:
-        payload = request.data
-        serializer = DirectorSerializer(data=payload)
+        data = request.data
+        username = data['email']+data['first_name']+ data['last_name']+data['date_of_birth']
 
-        if serializer.is_valid():
-            instance = serializer.save()
+        data1 ={
+            'username': username,
+            'first_name': data['first_name'],
+            'last_name': data['last_name'],
+            'email':data['email'],
+            'password': data['password'],
+            'is_staff' : False
+        }
 
-            return Response({
+        data2 = {
+            'date_of_birth' :data['date_of_birth'],
+            'Nationality' : data['Nationality'],
+            'image' : data['image']
+        }
+        serializer1 = UserSerializer(data=data1)
+        serializer2 = DirectorSerializer(data=data2)
+
+
+        if serializer1.is_valid():
+            serializer1.save()
+            user = User.objects.get(email=data1['email'])
+            user.set_password(data['password'])
+            user.save()
+            if serializer2.is_valid():
+                serializer2.save(user = user)
+                return Response({
                 'code': status.HTTP_200_OK,
-                'message': 'Data added successfully.',
-                'data': serializer(instance).data
-            })
-        else:
+                'message': 'Data added successfully.'
+                })
+            else:
+                return Response({
+                   'code': status.HTTP_400_BAD_REQUEST,
+                   'errors': serializer2.errors
+                })
+
+        else:    
             return Response({
-                'code': status.HTTP_400_BAD_REQUEST,
-                'errors': serializer.errors
-            })
+                   'code': status.HTTP_400_BAD_REQUEST,
+                   'errors': serializer2.errors
+                })
+
+
     except Exception as e:
         return Response({
             'code': status.HTTP_400_BAD_REQUEST,
@@ -229,22 +259,52 @@ def directorCreate(request):
 @api_view(['POST'])
 def castCreate(request):
     try:
-        payload = request.data
-        serializer = CastSerializer(data=payload)
+        data = request.data
+        username = data['email'] + data['first_name']+ data['last_name']+data['date_of_birth']
 
-        if serializer.is_valid():
-            instance = serializer.save()
+        data1 ={
+            'username': username,
+            'first_name': data['first_name'],
+            'last_name': data['last_name'],
+            'email':data['email'],
+            'password': data['password'],
+            'is_staff' : False
+        }
 
-            return Response({
+        data2 = {
+            'date_of_birth' :data['date_of_birth'],
+            'Nationality' : data['Nationality'],
+            'image' : data['image'],
+            'gender' : data['gender']
+        }
+        serializer1 = UserSerializer(data=data1)
+        serializer2 = CastSerializer(data=data2)
+
+
+        if serializer1.is_valid():
+            serializer1.save()
+            user = User.objects.get(email=data1['email'])
+            user.set_password(data['password'])
+            user.save()
+            if serializer2.is_valid():
+                serializer2.save(user = user)
+                return Response({
                 'code': status.HTTP_200_OK,
-                'message': 'Data added successfully.',
-                'data': serializer(instance).data
-            })
-        else:
+                'message': 'Data added successfully.'
+                })
+            else:
+                return Response({
+                   'code': status.HTTP_400_BAD_REQUEST,
+                   'errors': serializer2.errors
+                })
+
+        else:    
             return Response({
-                'code': status.HTTP_400_BAD_REQUEST,
-                'errors': serializer.errors
-            })
+                   'code': status.HTTP_400_BAD_REQUEST,
+                   'errors': serializer2.errors
+                })
+
+
     except Exception as e:
         return Response({
             'code': status.HTTP_400_BAD_REQUEST,
@@ -257,23 +317,51 @@ def castCreate(request):
 @api_view(['POST'])
 def authorizerCreate(request):
     try:
-        payload = request.data
-        payload.is_staff = True
-        serializer = AuthorizerSerializer(data=payload)
+        data = request.data
+        username = data['email'] + data['first_name']+ data['last_name']+data['date_of_birth']
 
-        if serializer.is_valid():
-            instance = serializer.save()
+        data1 ={
+            'username': username,
+            'first_name': data['first_name'],
+            'last_name': data['last_name'],
+            'email':data['email'],
+            'password': data['password'],
+            'is_staff' : True
+        }
 
-            return Response({
+        data2 = {
+            'phone' :data['phone'],
+            'nid' : data['nid'],
+            'image' : data['image']
+        }
+        serializer1 = UserSerializer(data=data1)
+        serializer2 = AuthorizerSerializer(data=data2)
+
+
+        if serializer1.is_valid():
+            serializer1.save()
+            user = User.objects.get(email=data1['email'])
+            user.set_password(data['password'])
+            user.save()
+            if serializer2.is_valid():
+                serializer2.save(user = user)
+                return Response({
                 'code': status.HTTP_200_OK,
-                'message': 'Data added successfully.',
-                'data': serializer(instance).data
-            })
-        else:
+                'message': 'Data added successfully.'
+                })
+            else:
+                return Response({
+                   'code': status.HTTP_400_BAD_REQUEST,
+                   'errors': serializer2.errors
+                })
+
+        else:    
             return Response({
-                'code': status.HTTP_400_BAD_REQUEST,
-                'errors': serializer.errors
-            })
+                   'code': status.HTTP_400_BAD_REQUEST,
+                   'errors': serializer2.errors
+                })
+
+
     except Exception as e:
         return Response({
             'code': status.HTTP_400_BAD_REQUEST,
@@ -286,22 +374,51 @@ def authorizerCreate(request):
 @api_view(['POST'])
 def reviewerCreate(request):
     try:
-        payload = request.data
-        serializer = ReviewerSerializer(data=payload)
+        data = request.data
+        username = data['email'] + data['first_name']+ data['last_name']+data['date_of_birth']
 
-        if serializer.is_valid():
-            instance = serializer.save()
+        data1 ={
+            'username': username,
+            'first_name': data['first_name'],
+            'last_name': data['last_name'],
+            'email':data['email'],
+            'password': data['password'],
+            'is_staff' : True
+        }
 
-            return Response({
+        data2 = {
+            'age' :data['age'],
+            'gender' : data['gender'],
+            'image' : data['image']
+        }
+        serializer1 = UserSerializer(data=data1)
+        serializer2 = ReviewerSerializer(data=data2)
+
+
+        if serializer1.is_valid():
+            serializer1.save()
+            user = User.objects.get(email=data1['email'])
+            user.set_password(data['password'])
+            user.save()
+            if serializer2.is_valid():
+                serializer2.save(user = user)
+                return Response({
                 'code': status.HTTP_200_OK,
-                'message': 'Data added successfully.',
-                'data': serializer(instance).data
-            })
-        else:
+                'message': 'Data added successfully.'
+                })
+            else:
+                return Response({
+                   'code': status.HTTP_400_BAD_REQUEST,
+                   'errors': serializer2.errors
+                })
+
+        else:    
             return Response({
-                'code': status.HTTP_400_BAD_REQUEST,
-                'errors': serializer.errors
-            })
+                   'code': status.HTTP_400_BAD_REQUEST,
+                   'errors': serializer2.errors
+                })
+
+
     except Exception as e:
         return Response({
             'code': status.HTTP_400_BAD_REQUEST,
@@ -313,24 +430,40 @@ def reviewerCreate(request):
 @api_view(['PATCH'])
 def directorUpdate(request,pk):
     try:
-        if Director.objects.get(id=pk).exists():
+        if Director.objects.filter(pk=pk).first():
             instance = Director.objects.get(pk=pk)
-            serializer = DirectorSerializer(instance, data=request.data, partial=True)
+            user = instance.user
 
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
+            # Remove 'password' field from request data if present
+            request_data = request.data.copy()
+            if 'password' in request_data:
+                request_data.pop('password')
+
+            serializer1 = UserSerializer(user, data=request_data, partial=True)
+            serializer2 = DirectorSerializer(instance, data=request_data, partial=True)
+
+
+            if serializer1.is_valid():
+                serializer1.save()
+                user.save()
+                if serializer2.is_valid():
+                    serializer2.save(user = user)
+                    return Response({
                     'code': status.HTTP_200_OK,
-                    'response': "Data updated successfully",
-                    "data": serializer.data
-                })
-            
-            else:
+                    'message': 'Data Updated successfully.'
+                    })
+                else:
+                    return Response({
+                       'code': status.HTTP_400_BAD_REQUEST,
+                       'errors': serializer2.errors
+                    })
+    
+            else:    
                 return Response({
-                'code': status.HTTP_400_BAD_REQUEST,
-                'response': "Data not valid",
-                'error': serializer.errors
-                })
+                       'code': status.HTTP_400_BAD_REQUEST,
+                       'errors': serializer2.errors
+                    })
+
     except ObjectDoesNotExist:
         return Response({
             'code': status.HTTP_404_NOT_FOUND,
@@ -350,24 +483,39 @@ def directorUpdate(request,pk):
 @api_view(['PATCH'])
 def castUpdate(request,pk):
     try:
-        if Cast.objects.get(id=pk).exists():
+        if Cast.objects.filter(pk=pk).first():
             instance = Cast.objects.get(pk=pk)
-            serializer = CastSerializer(instance, data=request.data, partial=True)
+            user = instance.user
+            # Remove 'password' field from request data if present
+            request_data = request.data.copy()
+            if 'password' in request_data:
+                request_data.pop('password')
 
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
+            serializer1 = UserSerializer(user, data=request_data, partial=True)
+            serializer2 = CastSerializer(instance, data=request_data, partial=True)
+
+
+            if serializer1.is_valid():
+                serializer1.save()
+                user.save()
+                if serializer2.is_valid():
+                    serializer2.save(user = user)
+                    return Response({
                     'code': status.HTTP_200_OK,
-                    'response': "Data updated successfully",
-                    "data": serializer.data
-                })
-            
-            else:
+                    'message': 'Data Updated successfully.'
+                    })
+                else:
+                    return Response({
+                       'code': status.HTTP_400_BAD_REQUEST,
+                       'errors': serializer2.errors
+                    })
+    
+            else:    
                 return Response({
-                'code': status.HTTP_400_BAD_REQUEST,
-                'response': "Data not valid",
-                'error': serializer.errors
-                })
+                       'code': status.HTTP_400_BAD_REQUEST,
+                       'errors': serializer2.errors
+                    })
+
     except ObjectDoesNotExist:
         return Response({
             'code': status.HTTP_404_NOT_FOUND,
@@ -386,24 +534,39 @@ def castUpdate(request,pk):
 @api_view(['PATCH'])
 def authorizerUpdate(request,pk):
     try:
-        if Authorizer.objects.get(id=pk).exists():
+        if Authorizer.objects.filter(pk=pk).first():
             instance = Authorizer.objects.get(pk=pk)
-            serializer = AuthorizerSerializer(instance, data=request.data, partial=True)
+            user = instance.user
+            # Remove 'password' field from request data if present
+            request_data = request.data.copy()
+            if 'password' in request_data:
+                request_data.pop('password')
 
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
+            serializer1 = UserSerializer(user, data=request_data, partial=True)
+            serializer2 = AuthorizerSerializer(instance, data=request_data, partial=True)
+
+
+            if serializer1.is_valid():
+                serializer1.save()
+                user.save()
+                if serializer2.is_valid():
+                    serializer2.save(user = user)
+                    return Response({
                     'code': status.HTTP_200_OK,
-                    'response': "Data updated successfully",
-                    "data": serializer.data
-                })
-            
-            else:
+                    'message': 'Data Updated successfully.'
+                    })
+                else:
+                    return Response({
+                       'code': status.HTTP_400_BAD_REQUEST,
+                       'errors': serializer2.errors
+                    })
+    
+            else:    
                 return Response({
-                'code': status.HTTP_400_BAD_REQUEST,
-                'response': "Data not valid",
-                'error': serializer.errors
-                })
+                       'code': status.HTTP_400_BAD_REQUEST,
+                       'errors': serializer2.errors
+                    })
+
     except ObjectDoesNotExist:
         return Response({
             'code': status.HTTP_404_NOT_FOUND,
@@ -423,24 +586,39 @@ def authorizerUpdate(request,pk):
 @api_view(['PATCH'])
 def reviewerUpdate(request,pk):
     try:
-        if Reviewer.objects.get(id=pk).exists():
-            instance = Reviewer.objects.get(pk=pk)
-            serializer = ReviewerSerializer(instance, data=request.data, partial=True)
+        if Authorizer.objects.filter(pk=pk).first():
+            instance = Authorizer.objects.get(pk=pk)
+            user = instance.user
+            # Remove 'password' field from request data if present
+            request_data = request.data.copy()
+            if 'password' in request_data:
+                request_data.pop('password')
 
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
+            serializer1 = UserSerializer(user, data=request_data, partial=True)
+            serializer2 = AuthorizerSerializer(instance, data=request_data, partial=True)
+
+
+            if serializer1.is_valid():
+                serializer1.save()
+                user.save()
+                if serializer2.is_valid():
+                    serializer2.save(user = user)
+                    return Response({
                     'code': status.HTTP_200_OK,
-                    'response': "Data updated successfully",
-                    "data": serializer.data
-                })
-            
-            else:
+                    'message': 'Data Updated successfully.'
+                    })
+                else:
+                    return Response({
+                       'code': status.HTTP_400_BAD_REQUEST,
+                       'errors': serializer2.errors
+                    })
+    
+            else:    
                 return Response({
-                'code': status.HTTP_400_BAD_REQUEST,
-                'response': "Data not valid",
-                'error': serializer.errors
-                })
+                       'code': status.HTTP_400_BAD_REQUEST,
+                       'errors': serializer2.errors
+                    })
+
     except ObjectDoesNotExist:
         return Response({
             'code': status.HTTP_404_NOT_FOUND,
