@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from .serializers import UserSerializer,DirectorSerializer,DirectorReadSerializer,ReviewerSerializer,ReviewerReadSerializer,CastSerializer,CastReadSerializer,AuthorizerSerializer,AuthorizerReadSerializer,UserReadSerializer,SetNewPasswordSerializer
+from .serializers import UserSerializer,DirectorSerializer,DirectorReadSerializer,ReviewerSerializer,ReviewerReadSerializer,CastSerializer,CastReadSerializer,AuthorizerSerializer,AuthorizerReadSerializer,SetNewPasswordSerializer
 from .models import Director,Authorizer,Reviewer,Cast
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -11,7 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.core.cache import cache 
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password,check_password
 
 
 # Create your views here.
@@ -586,8 +586,8 @@ def authorizerUpdate(request,pk):
 @api_view(['PATCH'])
 def reviewerUpdate(request,pk):
     try:
-        if Authorizer.objects.filter(pk=pk).first():
-            instance = Authorizer.objects.get(pk=pk)
+        if Reviewer.objects.filter(pk=pk).first():
+            instance = Reviewer.objects.get(pk=pk)
             user = instance.user
             # Remove 'password' field from request data if present
             request_data = request.data.copy()
@@ -595,7 +595,7 @@ def reviewerUpdate(request,pk):
                 request_data.pop('password')
 
             serializer1 = UserSerializer(user, data=request_data, partial=True)
-            serializer2 = AuthorizerSerializer(instance, data=request_data, partial=True)
+            serializer2 = ReviewerSerializer(instance, data=request_data, partial=True)
 
 
             if serializer1.is_valid():
@@ -639,7 +639,9 @@ def directorDelete(request,pk):
     try:
         if Director.objects.filter(id=pk).exists():
             instance = Director.objects.get(id=pk)
+            user = instance.user
             instance.delete()
+            user.delete()
 
             return Response({
                 'code': status.HTTP_200_OK,
@@ -664,7 +666,9 @@ def castDelete(request,pk):
     try:
         if Cast.objects.filter(id=pk).exists():
             instance = Cast.objects.get(id=pk)
+            user = instance.user
             instance.delete()
+            user.delete()
 
             return Response({
                 'code': status.HTTP_200_OK,
@@ -689,7 +693,9 @@ def authorizerDelete(request,pk):
     try:
         if Authorizer.objects.filter(id=pk).exists():
             instance = Authorizer.objects.get(id=pk)
+            user = instance.user
             instance.delete()
+            user.delete()
 
             return Response({
                 'code': status.HTTP_200_OK,
@@ -714,7 +720,9 @@ def reviewerDelete(request,pk):
     try:
         if Reviewer.objects.filter(id=pk).exists():
             instance = Reviewer.objects.get(id=pk)
+            user = instance.user
             instance.delete()
+            user.delete()
 
             return Response({
                 'code': status.HTTP_200_OK,
@@ -734,68 +742,86 @@ def reviewerDelete(request,pk):
 
 
 
+# @api_view(['POST'])
+# def logIn(request):
+#     try:
+#         print("b4 serializer")
+#         serializer = UserSerializer(data = request.data)
+#         print("after serializer")
+#         if serializer.is_valid():
+#             print("inside serializer")
+#             email = serializer.validated_data.get('username')      
+#             password = serializer.validated_data.get('password')
+#             print("email")
+#             print("password")
+
+#             if not email or not password :
+#                 return Response({'error': 'email and Password are required.'}, 
+#                     status=status.HTTP_400_BAD_REQUEST)
+         
+#             instance = User.objects.get(email=email)
+#             print("after user fetch")
+#             if password == instance.password: 
+#                 print("inside password")
+#                 refresh = RefreshToken.for_user(instance)
+#                 tokens = {
+#                     "refresh": str(refresh),
+#                     "access": str(refresh.access_token),
+#                     } 
+                       
+#                 # serializer1 = UserReadSerializer(instance)
+                
+#                 return Response(
+#                     {'message': 'Login successful!',
+#                       'tokens': tokens
+#                     }, 
+#                     status=status.HTTP_200_OK
+#                 )             
+#             else:
+#                 return Response(
+#                     {'error': 'Invalid password.'}, 
+#                     status=status.HTTP_401_UNAUTHORIZED
+#                 )
+#         else:
+#             return Response({
+#                 'code': status.HTTP_400_BAD_REQUEST,
+#                 'errors': serializer.errors
+#             })
+        
+#     except:
+
+#         return Response({'error': 'customer not found.'},status=status.HTTP_404_NOT_FOUND)
+
+
 @api_view(['POST'])
 def logIn(request):
     try:
-        serializer = UserSerializer(data = request.data)
-        if serializer.is_valid():
-            email = UserSerializer.validated_data.get('email')
-            password = UserSerializer.validated_data.get('password')
-            
-            if not email or not password :
-                return Response({'error': 'email and Password are required.'}, 
-                    status=status.HTTP_400_BAD_REQUEST)
-         
-            instance = User.objects.get(email=email)
-            print("after user fetch")
-            if password == instance.password: 
-                print("inside password")
-                refresh = RefreshToken.for_user(instance)
-                tokens = {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                    } 
-                       
-                serializer1 = UserReadSerializer(instance)
-                
-                return Response(
-                    {'message': 'Login successful!',
-                      'tokens': tokens,
-                      'customer': serializer1.data}, 
-                    status=status.HTTP_200_OK
-                )             
-            else:
-                return Response(
-                    {'error': 'Invalid password.'}, 
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-    except:
-
-        return Response({'error': 'customer not found.'},status=status.HTTP_404_NOT_FOUND)
-
-
-
-
-@api_view(['POST'])
-def resetPasswordSendLink(request):
-    try:
-        serializer = UserSerializer(data = request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            user = User.objects.get(email=email)
-            reset_token = get_random_string(50)
-            send_mail(
-                    "Password Reset",
-                    f"Use this token to reset your password: {reset_token}",
-                    "noreply@example.com",
-                    [email],
-                )
+        data = request.data
+        email = data['email']
+        password = data['password']
+        if not email or not password :
             return Response({
-                'code': status.HTTP_200_OK,
-                'response': "Reset token sent to your email.",
-                'data': serializer.data
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Email & Password both fields are required"
             })
-        
+        instance = User.objects.get(email=email)
+        if check_password(password,instance.password):
+            refresh = RefreshToken.for_user(instance)
+            tokens = {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                } 
+            return Response(
+                    {'message': 'Login successful!',
+                     'code' : status.HTTP_200_OK,
+                      'tokens': tokens
+                    })
+        else:
+            return Response(
+                {'error': 'Invalid password.'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+           
     except ObjectDoesNotExist:
         return Response({
             'code': status.HTTP_404_NOT_FOUND,
@@ -809,6 +835,69 @@ def resetPasswordSendLink(request):
                 'error': str(e)
             })
 
+
+# @api_view(['POST'])
+# def resetPasswordSendLink(request):
+#     try:
+#         serializer = UserSerializer(data = request.data)
+#         if serializer.is_valid():
+#             email = serializer.validated_data['email']
+#             user = User.objects.get(email=email)
+#             reset_token = get_random_string(50)
+#             send_mail(
+#                     "Password Reset",
+#                     f"Use this token to reset your password: {reset_token}",
+#                     "noreply@example.com",
+#                     [email],
+#                 )
+#             return Response({
+#                 'code': status.HTTP_200_OK,
+#                 'response': "Reset token sent to your email.",
+#                 'data': serializer.data
+#             })
+        
+#     except ObjectDoesNotExist:
+#         return Response({
+#             'code': status.HTTP_404_NOT_FOUND,
+#             'response': "Data did not found"
+#         })
+    
+#     except Exception as e:
+#         return Response({
+#                 'code': status.HTTP_400_BAD_REQUEST,
+#                 'response': "Data did not Valid",
+#                 'error': str(e)
+#             })
+
+@api_view(['POST'])
+def resetPasswordSendLink(request):
+    try:
+        data = request.data
+        email = data['email']
+        user = User.objects.get(email=email)
+        reset_token = get_random_string(50)
+        send_mail(
+                "Password Reset",
+                f"Use this token to reset your password: {reset_token}",
+                "noreply@example.com",
+                [email],
+            )
+        return Response({
+            'code': status.HTTP_200_OK,
+             'response': "Reset token sent to your email."
+        })
+    except ObjectDoesNotExist:
+        return Response({
+            'code': status.HTTP_404_NOT_FOUND,
+            'response': "Data did not found"
+        })
+    
+    except Exception as e:
+        return Response({
+                'code': status.HTTP_400_BAD_REQUEST,
+                'response': "Data did not Valid",
+                'error': str(e)
+            })
 
 @api_view(['POST'])
 def resetPassword(request):

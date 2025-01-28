@@ -26,7 +26,8 @@ urlpatterns = [
     path('reviewer-delete/<int:pk>/', views.reviewerDelete, name='reviewer-delete'),
     path('reviewer-create/', views.reviewerCreate, name='reviewer-create'),
 
-    path('login', views.logIn, name='login'),
-    path('reset-password', views.resetPassword, name='reset-password'),
+    path('login/', views.logIn, name='login'),
+    path('reset-password/', views.resetPassword, name='reset-password'),
+    path('reset-password-send-link/', views.resetPasswordSendLink, name='reset-password-send-link'),
     
 ]

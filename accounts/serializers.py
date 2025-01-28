@@ -63,24 +63,29 @@ class AuthorizerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-#custom serializer for retrieving customer or admin data
-class UserReadSerializer(serializers.ModelSerializer):
-    additional_info = serializers.SerializerMethodField('get_additional_info')
+# #custom serializer for retrieving customer or admin data
+# class UserReadSerializer(serializers.ModelSerializer):
+#     additional_info = serializers.SerializerMethodField('get_additional_info')
 
-    def get_additional_info(self, instance ):
+#     def get_additional_info(self, instance ):
 
-        if not instance.is_staff:
-            info = Reviewer.objects.get(user = instance.id)
-            return ReviewerSerializer(info).data
-        else:
-            info = Authorizer.objects.get(user = instance.id)
-            return AuthorizerSerializer(info).data
+
+#         if  instance.is_staff:
+#             info = Authorizer.objects.get(user = instance.id)
+#             return AuthorizerSerializer(info).data
+#         elif instance.gender ==None:
+#             info = Director.objects.get(user = instance.id)
+#             return DirectorSerializer(info).data
+#         elif  instance.age:
+#             info = Reviewer.objects.get(user = instance.id)
+#             return ReviewerSerializer(info).data
+#         else:
+#             info = Cast.objects.get(user = instance.id)
+#             return CastSerializer(info).data
         
-
-
-    class Meta:
-        model = User
-        fields = '__all__'
+#     class Meta:
+#         model = User
+#         fields = '__all__'
     
 
 
