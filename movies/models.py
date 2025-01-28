@@ -28,10 +28,11 @@ class Movie(models.Model):
     budget = models.FloatField(max_length=10,help_text="Enter in Lakh")
     total_collection = models.FloatField(max_length=10,help_text="Enter in Lakh")
     final_verdict = models.CharField(max_length=10,choices=FINAL_VERDICT_CHOICES)
-    image = models.ImageField(upload_to='movie_images/', null=True, blank=True)
-    casts = models.ManyToManyField(Cast, related_name='movies')
-    director = models.OneToOneField(Director,on_delete=models.CASCADE, related_name='director', null = True)
-    rating = models.FloatField(max_length=5,default=None,null=True,blank=True )
+    image = models.CharField(max_length=10,null=True,blank=True)
+    # image = models.ImageField(upload_to='movie_images/', null=True, blank=True)
+    casts = models.ManyToManyField(Cast, related_name='movies', blank=True)
+    director = models.ForeignKey(Director,on_delete=models.CASCADE, related_name='director', null = True,blank=True)
+    rating = models.FloatField(max_length=50,default=None,null=True,blank=True )
 
 
 

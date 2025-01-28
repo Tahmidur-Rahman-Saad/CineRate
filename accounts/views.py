@@ -45,7 +45,7 @@ def directors(request):
 def casts(request):
     try:
         casts = Cast.objects.all()
-        serializer = CastReadSerializer(directors, many=True) 
+        serializer = CastReadSerializer(casts, many=True) 
         return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",

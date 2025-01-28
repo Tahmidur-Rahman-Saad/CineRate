@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from .serializers import MovieSerializer,MusicSerializer,MovieDirectorCastSerializer
+from .serializers import MovieSerializer,MusicSerializer
 from .models import Music,Movie
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q,Avg
@@ -52,7 +52,7 @@ def movieDetails(request,pk):
     try:
         if Movie.objects.filter(id = pk).exists():
             movie = Movie.objects.get(pk = pk)
-            serializer = MovieDirectorCastSerializer(movie)
+            serializer = MovieSerializer(movie)
             return Response({
                 'code': status.HTTP_200_OK,
                 'response': "Data Received Successfully",
@@ -76,8 +76,8 @@ def movieDetails(request,pk):
 @api_view(['POST'])
 def movieCreate(request):
     try:
-        payload = request.data
-        serializer = MovieSerializer(data=payload)
+        data = request.data
+        serializer = MovieSerializer(data=data)
 
         if serializer.is_valid():
             instance = serializer.save()
@@ -85,7 +85,7 @@ def movieCreate(request):
             return Response({
                 'code': status.HTTP_200_OK,
                 'message': 'Data added successfully.',
-                'data': serializer(instance).data
+                'data': serializer.data
             })
         else:
             return Response({
@@ -103,7 +103,7 @@ def movieCreate(request):
 @api_view(['PATCH'])
 def movieUpdate(request,pk):
     try:
-        if Movie.objects.get(id=pk).exists():
+        if Movie.objects.filter(pk=pk).exists():
             rating = Movie.objects.get(pk=pk)
             serializer = MovieSerializer(rating, data=request.data, partial=True)
 
@@ -173,7 +173,7 @@ def ratingsSet(request,key):
 
                 if ratings < 5 :
                     movie.save()
-                    serializer = MovieDirectorCastSerializer(movie)
+                    serializer = MovieSerializer(movie)
                     return Response({
                         'code': status.HTTP_200_OK,
                         'response': "Data Set Successfully",
@@ -217,7 +217,7 @@ def movieTopRatingChecking(request,days,counts):
         movies = Movie.objects.filter(created_at__gte=days_ago).order_by('-rating')
         if movies.count() >= counts:
             movies = movies.all()[:counts]
-        serializer = MovieDirectorCastSerializer(movies)
+        serializer = MovieSerializer(movies)
         return Response({
             'code': status.HTTP_200_OK,
             'response': "Data Received Successfully",
